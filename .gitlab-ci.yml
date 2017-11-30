@@ -1,0 +1,7 @@
+before_script:
+  - export SC_SIGNAL_WRITE_CHECK=DISABLE
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+Build_Runtests:
+  script:
+    - ./scripts/build.sh
