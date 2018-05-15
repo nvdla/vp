@@ -6,10 +6,10 @@
 // this distribution for more information.
 // ================================================================
 
-// File Name: irq_adaptor.h
+// File Name: irq2gss.h
 
-#ifndef _IRQ_ADAPTOR_H_
-#define _IRQ_ADAPTOR_H_
+#ifndef _IRQ2GSS_H_
+#define _IRQ2GSS_H_
 
 #ifndef SC_INCLUDE_DYNAMIC_PROCESSES
 #define SC_INCLUDE_DYNAMIC_PROCESSES
@@ -18,17 +18,20 @@
 #include <systemc.h>
 
 #include "greensignalsocket/green_signal.h"
+#include "shm_lib/simdb.hpp"
+#include "shm_lib/shm_defs.h"
+#include "SimpleCPU/IRQ.h"
 
-#include "nvdla/IRQ.h"
-
-class IrqAdaptor : 
+class irq2gss : 
     public sc_core::sc_module
 {
 public:
-    IrqAdaptor( sc_core::sc_module_name name , uint32_t irq);
-    SC_HAS_PROCESS(IrqAdaptor);
 
-    sc_core::sc_in< bool > m_signal;
+    irq2gss( sc_core::sc_module_name name , uint32_t irq, const char* shm_name);
+    ~irq2gss(void);
+
+    SC_HAS_PROCESS(irq2gss);
+
     gs_generic_signal::initiator_signal_socket m_socket;
 
     void transport(void);
@@ -37,6 +40,7 @@ private:
     gs_generic_signal::gs_generic_signal_payload payload;
     IRQ_ext_data data;
     uint32_t irq_number;
+    simdb shm_db;
 };
 
 #endif

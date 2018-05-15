@@ -23,9 +23,7 @@ static int const verb = SC_HIGH;
 #endif
 
 IrqAdaptor::IrqAdaptor( sc_core::sc_module_name name , uint32_t irq)
-    : m_delay(sc_core::SC_ZERO_TIME),
-      ack_requirement(false),
-      m_socket("m_socket"),
+    : m_socket("m_socket"),
       irq_number(irq)
 {
     payload.set_data_ptr( reinterpret_cast<unsigned char*>( &data )  );
@@ -40,12 +38,13 @@ IrqAdaptor::IrqAdaptor( sc_core::sc_module_name name , uint32_t irq)
 
 void IrqAdaptor::transport(void) 
 {
+    sc_time delay = SC_ZERO_TIME;
     while(1) {
         wait();
         data.value    = m_signal.read();
         data.irq_line = irq_number;
         m_socket.validate_extension<IRQ_LINE_EXTENSION>(payload);
-        m_socket->b_transport( payload, m_delay );
+        m_socket->b_transport( payload, delay );
 #if DEBUG_LOG
         std::ostringstream oss;
         oss << "IRQ: irq_line=" << data.irq_line << " value=" << data.value;

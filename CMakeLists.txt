@@ -18,9 +18,15 @@ set(INCLUDE_DIRS include)
 
 include_directories(${INCLUDE_DIRS})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror -DDEBUG_LOG=1")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror")
+if (AWS_FPGA_PRESENT)
+    set(AWS_FPGA_CFLAGS "-DAWS_FPGA_PRESENT=1")
+else ()
+    set(AWS_FPGA_CFLAGS "-DAWS_FPGA_PRESENT=0")
+endif ()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror ${AWS_FPGA_CFLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror -DDEBUG_LOG=1 ${AWS_FPGA_CFLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror ${AWS_FPGA_CFLAGS}")
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -55,6 +61,16 @@ else()
     message( FATAL_ERROR "NVDLA CMOD library not found." )
 endif()
 
+if(AWS_FPGA_PRESENT)
+    find_package(AWSSDK)
+    if(AWSSDK_FOUND)
+        include_directories(${AWSSDK_INCLUDE_DIRS})
+        link_directories(${AWSSDK_LIBRARY_DIRS})
+    else()
+        message( FATAL_ERROR "AWSSDK library not found." )
+    endif()
+endif()
+
 add_subdirectory(libs/greenlib)
 include_directories(libs/greenlib/greencontrol/include
 		    libs/greenlib/greenmemory/include
@@ -85,6 +101,9 @@ link_directories(${CMAKE_SOURCE_DIR}/libs/greenlib/greenreg/lib
 set(GREENLIB_FOUND TRUE)
 set(GREENLIB_LIBRARY_DIRS ${CMAKE_SOURCE_DIR}/libs/greenlib/greenreg/lib)
 set(GREENLIB_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/greenlib/greencontrol/include)
+set(GREENLIB_FOUND TRUE)
+set(GREENLIB_LIBRARY_DIRS ${CMAKE_SOURCE_DIR}/libs/greenlib/greenreg/lib)
+set(GREENLIB_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/greenlib/greencontrol/include)
 
 add_subdirectory(libs/tlm2c libs/tlm2c.build/lib)
 include_directories(libs/tlm2c/include)
@@ -108,6 +127,10 @@ add_subdirectory(models/cpu models/cpu.build)
 include_directories(models/cpu/include)
 link_directories(${CMAKE_SOURCE_DIR}/models/cpu.build)
 
+set(SIMPLECPU_FOUND TRUE)
+set(SIMPLECPU_LIBRARY_DIRS ${CMAKE_SOURCE_DIR}/models/cpu.build)
+set(SIMPLECPU_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/models/cpu/include)
+
 add_subdirectory(models/memory models/memory.build)
 include_directories(models/memory/include)
 link_directories(${CMAKE_SOURCE_DIR}/models/memory.build)
@@ -115,6 +138,16 @@ link_directories(${CMAKE_SOURCE_DIR}/models/memory.build)
 add_subdirectory(models/nvdla models/nvdla.build)
 include_directories(models/nvdla/include)
 link_directories(${CMAKE_SOURCE_DIR}/models/nvdla.build)
+
+if(AWS_FPGA_PRESENT)
+    add_subdirectory(fpga/aws-fpga/fpga_sc_wrapper fpga/aws-fpga/fpga_sc_wrapper.build)
+    include_directories(fpga/aws-fpga/fpga_sc_wrapper/include)
+    link_directories(${CMAKE_SOURCE_DIR}/fpga/aws-fpga/fpga_sc_wrapper.build)
+endif()
+
+add_subdirectory(fpga/aws-fpga/cosim_sc_wrapper fpga/aws-fpga/cosim_sc_wrapper.build)
+include_directories(fpga/aws-fpga/cosim_sc_wrapper/include)
+link_directories(${CMAKE_SOURCE_DIR}/fpga/aws-fpga/cosim_sc_wrapper.build)
 
 ### QBOX ###
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -128,7 +161,7 @@ ExternalProject_Add(qbox
 	BINARY_DIR ${CMAKE_SOURCE_DIR}/libs/qbox.build
 	TMP_DIR ${CMAKE_SOURCE_DIR}/libs/qbox.build/tmp
 	STAMP_DIR ${CMAKE_SOURCE_DIR}/libs/qbox.build/stampdir
-	CONFIGURE_COMMAND ${CMAKE_SOURCE_DIR}/libs/qbox/configure --target-list=aarch64-softmmu --disable-xfsctl ${QBOX_DEBUG_BUILD} --library --qbox --nvdla --with-tlm2c=${CMAKE_SOURCE_DIR}/libs/tlm2c.build --prefix=${CMAKE_SOURCE_DIR}/libs/qbox.build --disable-pie --extra-cflags=-fPIC\ -fpic\ -ftls-model=initial-exec\ -DNVDLA_HW_VERSION=${NVDLA_HW_VERSION}
+	CONFIGURE_COMMAND ${CMAKE_SOURCE_DIR}/libs/qbox/configure --target-list=aarch64-softmmu --disable-xfsctl ${QBOX_DEBUG_BUILD} --library --qbox --nvdla --with-tlm2c=${CMAKE_SOURCE_DIR}/libs/tlm2c.build --prefix=${CMAKE_SOURCE_DIR}/libs/qbox.build --disable-pie --disable-werror --extra-cflags=-fPIC\ -fpic\ -ftls-model=initial-exec\ -DNVDLA_HW_VERSION=${NVDLA_HW_VERSION}\ ${AWS_FPGA_CFLAGS}
 	PREFIX ${CMAKE_SOURCE_DIR}/libs/qbox.build
 	BUILD_COMMAND $(MAKE)
 )	
@@ -160,4 +193,15 @@ target_link_libraries(aarch64_toplevel  ${SystemC_LIBRARIES}
                 log
                 nvdla
 )
+
+if(AWS_FPGA_PRESENT)
+    add_dependencies(aarch64_toplevel fpga_sc_wrapper)
+    target_link_libraries(aarch64_toplevel fpga_sc_wrapper)
+    set_target_properties(aarch64_toplevel PROPERTIES COMPILE_FLAGS "-std=c++11 -Wno-deprecated-declarations -DCONFIG_LOGLEVEL=4")
+endif()
+
+add_dependencies(aarch64_toplevel cosim_sc_wrapper)
+target_link_libraries(aarch64_toplevel cosim_sc_wrapper)
+set_target_properties(aarch64_toplevel PROPERTIES COMPILE_FLAGS "-std=c++11 -Wno-deprecated-declarations -DCONFIG_LOGLEVEL=4")
+
 install(TARGETS aarch64_toplevel DESTINATION bin)

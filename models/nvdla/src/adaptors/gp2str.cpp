@@ -36,9 +36,9 @@ std::string gp2str(const tlm::tlm_generic_payload &gp)
 
   if (address % bytes_in_word != 0) {
     data_oss << " ";
-    int bytes = (bytes_in_word - address%bytes_in_word) > remain_len ?
+    uint32_t bytes = (bytes_in_word - address%bytes_in_word) > remain_len ?
                 remain_len : (bytes_in_word- address%bytes_in_word);
-    for (int i=0; i<bytes; i++) {
+    for (uint32_t i=0; i<bytes; i++) {
       data_oss << getByte(data_ptr+idx, getBe(be_ptr, be_len, idx), !i );
       idx++;
       remain_len--;
@@ -54,14 +54,14 @@ std::string gp2str(const tlm::tlm_generic_payload &gp)
         data_oss << std::hex << std::setw(8) << std::setfill('0') << *reinterpret_cast<const uint32_t*>(data_ptr+idx);
         idx += bytes_in_word;
       } else {
-        for (int i=0;i<bytes_in_word;i++) {
+        for (uint32_t i=0;i<bytes_in_word;i++) {
           data_oss << getByte(data_ptr+idx, getBe(be_ptr, be_len, idx), !i );
           idx++;
         }
       }
       remain_len -= bytes_in_word;
     } else { // remain_len < bytes_in_word
-      for (int i=0; i<remain_len; i++) {
+      for (uint32_t i=0; i<remain_len; i++) {
         data_oss << getByte(data_ptr+idx, getBe(be_ptr, be_len, idx), !i );
         idx++;
       }

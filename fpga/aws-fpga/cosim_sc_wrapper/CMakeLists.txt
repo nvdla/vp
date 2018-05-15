@@ -64,52 +64,44 @@ else()
     MESSAGE(FATAL_ERROR "GreenLib not found.")
 endif()
 
-FIND_PACKAGE(NvdlaCmod)
-if(NVDLA_CMOD_FOUND)
-    INCLUDE_DIRECTORIES(${NVDLA_CMOD_INCLUDE_DIR})
-    LINK_DIRECTORIES(${NVDLA_CMOD_LIBRARY_DIR})
+FIND_PACKAGE(SIMPLECPU)
+if(SIMPLECPU_FOUND)
+    INCLUDE_DIRECTORIES(${SIMPLECPU_INCLUDE_DIRS})
+    LINK_DIRECTORIES(${SIMPLECPU_LIBRARY_DIRS})
 else()
-    MESSAGE(FATAL_ERROR "NVDLA CMOD library not found.")
+    MESSAGE(FATAL_ERROR "SimpleCpu not found.")
 endif()
 
 
-### NVDLA CMOD ###
-INSTALL(DIRECTORY ${NVDLA_CMOD_INCLUDE_DIR}/ DESTINATION include)
-INSTALL(DIRECTORY ${NVDLA_CMOD_LIBRARY_DIR}/ DESTINATION lib)
+set(COSIM_CFLAGS "-std=c++11")
 
-set (INCLUDE_DIRS 
-  ${INCLUDE_DIRS} 
-  include 
-  )
+set (INCLUDE_DIRS ${INCLUDE_DIRS} include)
 
 INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror -DDEBUG_LOG=1")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror ${COSIM_CFLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror -DDEBUG_LOG=1 ${COSIM_CFLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DSC_INCLUDE_DYNAMIC_PROCESSES -Wall -Werror ${COSIM_CFLAGS}")
 
-set(NVDLA_ADAPTOR_FILES 
-  src/adaptors/gp2str.cpp
-  src/adaptors/gsgp2tlm.cpp
-  src/adaptors/tlm2gsgp.cpp
-  src/adaptors/irq_adaptor.cpp
+set(COSIM_SC_WRAPPER_FILES 
+  src/nvdla_cosim_sc_wrapper.cpp
+  src/extmem_cosim_sc_wrapper.cpp
+  src/transactors/gsgp2cosim.cpp
+  src/transactors/irq2gss.cpp
   )
 
 if(MINGW)
-    add_library(nvdla STATIC src/nvdla_top.cpp
-      ${NVDLA_ADAPTOR_FILES}
-      )
+    add_library(cosim_sc_wrapper STATIC ${COSIM_SC_WRAPPER_FILES})
 else()
-    add_library(nvdla SHARED src/nvdla_top.cpp
-      ${NVDLA_ADAPTOR_FILES}
-      )
+    add_library(cosim_sc_wrapper SHARED ${COSIM_SC_WRAPPER_FILES})
 endif()  
 
-TARGET_LINK_LIBRARIES(nvdla ${GREENLIB_LIBRARIES} ${NVDLA_CMOD_LIBRARY})
+TARGET_LINK_LIBRARIES(cosim_sc_wrapper ${GREENLIB_LIBRARIES})
+
 
 # Installation paths
-INSTALL(DIRECTORY include/nvdla
+INSTALL(DIRECTORY include/cosim_sc_wrapper
         DESTINATION include
 )
 
-INSTALL(TARGETS nvdla DESTINATION lib)
+INSTALL(TARGETS cosim_sc_wrapper DESTINATION lib)
