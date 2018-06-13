@@ -84,3 +84,7 @@ $ ./build/bin/aarch64_toplevel --conf [platform.lua]
 ```
 
 ```platform.lua``` is the path to your platform conf file. A demo example is in ```conf/aarch64_nvdla.lua```. You will need a linux kernel image to run the NVDLA software, please refer to [here](http://nvdla.org/vp.html#building-linux-kernel-for-nvdla-virtual-simulator) on how to build a kernel image for NVDLA.
+
+## HW verion index
+
+Commit info in github: e18de041df1717b7f9b1a64e0812e1f498c00f2a
