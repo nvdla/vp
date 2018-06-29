@@ -13,6 +13,7 @@
 
 #include <systemc.h>
 #include <tlm.h>
+#include <pthread.h>
 #include "tlm_utils/multi_passthrough_initiator_socket.h"
 #include "tlm_utils/multi_passthrough_target_socket.h" 
 
@@ -47,6 +48,8 @@ public:
     gs_generic_signal::initiator_signal_socket irq_socket;
     
     void b_transact(gs::gp::GenericSlaveAccessHandle ah) {};
+
+    void set_dmi_mutex(pthread_mutex_t *mtx);
 
 private:
     /*

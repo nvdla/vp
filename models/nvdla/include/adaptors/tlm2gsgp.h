@@ -17,6 +17,7 @@
 
 #include <systemc.h>
 #include <tlm.h>
+#include <pthread.h>
 #include "tlm_utils/simple_target_socket.h"
 
 #include "gsgpsocket/transport/GSGPMasterBlockingSocket.h"
@@ -36,6 +37,8 @@ public:
     gs::gp::GenericMasterBlockingPort<32> gsgp_master_port;
     
     tlm_utils::simple_target_socket<Tlm2gsgp> tlm_slave_port;
+
+    void set_dmi_mutex(pthread_mutex_t *mtx);
     
 private:
     void notify(gs::gp::master_atom& tc) {};
@@ -43,6 +46,10 @@ private:
     void b_transport(tlm::tlm_generic_payload& tlm_gp, sc_time& delay);
 
     transactionHandle transaction;      /*<! Transaction to be posted. */
+
+    pthread_mutex_t *dmi_mtx;
+
+    bool is_dmi;
 };
 
 #endif /* !TLM2GSGP_H */

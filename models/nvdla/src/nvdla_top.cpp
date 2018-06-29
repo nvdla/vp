@@ -83,6 +83,11 @@ NVDLA_top::~NVDLA_top()
         delete m_irq_adaptor;
 }
 
+void NVDLA_top::set_dmi_mutex(pthread_mutex_t *mtx)
+{
+    m_tlm2gsgp_mc->set_dmi_mutex(mtx);
+}
+
 /*
  *
  * End of elaboration

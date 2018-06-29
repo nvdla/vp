@@ -53,6 +53,8 @@
 #include "nvdla/nvdla_top.h"
 #include "log/log.h"
 
+#include <pthread.h>
+
 #include "greenrouter/genericRouter.h"
 #include "greenrouter/protocol/SimpleBus/simpleBusProtocol.h"
 #include "greenrouter/scheduler/fixedPriorityScheduler.h"
@@ -95,6 +97,9 @@ static int aws_fpga_cleanup(const aws_fpga_handle_t &aws_fpga_handle);
 #include "cosim_sc_wrapper/extmem_cosim_sc_wrapper.h"
 #include "stdlib.h"
 #include "unistd.h"
+
+// Mutex for Qemu memory access DMI mode which will optimize the platform performance
+static pthread_mutex_t dmi_mtx;
 
 static void showUsage(std::string name)
 {
@@ -218,6 +223,20 @@ bool parseCosimArgs(int argc, char **argv) {
 
     return cosim_en;
 }
+
+bool parseDmiArgs(int argc, char **argv) {
+    bool dmi_en = true; // set dmi as default
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--dmi") {
+            dmi_en = true;
+        }
+    }
+
+    return dmi_en;
+}
+
+
 
 #if AWS_FPGA_PRESENT
 bool parseFpgaArgs(int argc, char **argv, aws_fpga_info_t &aws_fpga_info) {
@@ -361,10 +380,24 @@ int sc_main(int argc, char **argv)
         rtl_plusargs_str = parsePlusArgsArgs(argc, argv);
     }
 
+    bool dmi_en;
+    dmi_en = parseDmiArgs(argc, argv);
+
+    if (dmi_en)
+    {
+        pthread_mutex_init(&dmi_mtx, NULL);
+        cout << "DMI mode enable"  << endl;
+    } else {
+        cout << "DMI mode disable" << endl;
+    }
+
     /*
      * CPU.
      */
     SimpleCPU *cpu = new SimpleCPU("CPU");
+
+    if (dmi_en)
+        cpu->set_dmi_mutex(&dmi_mtx);
 
     /*
      * Memories.
@@ -375,6 +408,8 @@ int sc_main(int argc, char **argv)
         ram = new extmem_fpga_sc_wrapper("ram", aws_fpga_handle.pci_bar_handle_pcis);
     } else {
         ram = new Memory<32>("ram");
+	if (dmi_en)
+            cpu->set_dmi_base_addr(((Memory<32> *)ram)->target_port.base_addr);
     }
 #else
 void *ram;
@@ -382,6 +417,8 @@ if (cosim_en) {
     ram = new extmem_cosim_sc_wrapper("ram");
 } else {
     ram = new Memory<32>("ram");
+    if (dmi_en)
+        cpu->set_dmi_base_addr(((Memory<32> *)ram)->target_port.base_addr);
 }
 #endif
 
@@ -394,6 +431,8 @@ if (cosim_en) {
         nvdla = new nvdla_fpga_sc_wrapper("nvdla", aws_fpga_handle.pci_bar_handle_ocl, aws_fpga_handle.pci_bar_handle_bar1, aws_fpga_handle.pci_msi_fd[0]);
     } else {
         nvdla = new NVDLA_top("nvdla");
+        if (dmi_en)
+            ((NVDLA_top*)nvdla)->set_dmi_mutex(&dmi_mtx);
     }
 #else
 void *nvdla;
@@ -401,6 +440,8 @@ if (cosim_en) {
     nvdla = new nvdla_cosim_sc_wrapper("nvdla");
 } else {
     nvdla = new NVDLA_top("nvdla");
+    if (dmi_en)
+        ((NVDLA_top*)nvdla)->set_dmi_mutex(&dmi_mtx);
 }
 #endif
 
