@@ -383,6 +383,11 @@ int sc_main(int argc, char **argv)
     bool dmi_en;
     dmi_en = parseDmiArgs(argc, argv);
 
+#if AWS_FPGA_PRESENT
+    if (aws_fpga_en)
+        dmi_en = false; // disable DMI mode for FPGA
+#endif
+
     if (dmi_en)
     {
         pthread_mutex_init(&dmi_mtx, NULL);
