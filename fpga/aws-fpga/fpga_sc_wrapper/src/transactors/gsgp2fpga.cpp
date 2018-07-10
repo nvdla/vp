@@ -105,7 +105,6 @@ void Gsgp2fpga::b_transact(gs::gp::GenericSlaveAccessHandle ah)
 #endif
         return;
     }
-    
     // Issue request
     uint64_t address = t->getMAddr() - gsgp_slave_port.base_addr + addr_offset;
     if (t->getMCmd() == gs::Generic_MCMD_WR) {
@@ -129,4 +128,10 @@ void Gsgp2fpga::b_transact(gs::gp::GenericSlaveAccessHandle ah)
 #endif
         }
     }
+}
+
+void Gsgp2fpga::set_addr_offset(uint64_t addr)
+{
+    addr_offset = addr;
+    std::cout << "Set Offset Address: " << hex << addr_offset <<endl;
 }

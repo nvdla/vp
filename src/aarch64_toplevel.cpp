@@ -231,6 +231,9 @@ bool parseDmiArgs(int argc, char **argv) {
         if (arg == "--dmi") {
             dmi_en = true;
         }
+        else if(arg == "--dmi_disable") {
+            dmi_en = false;
+        }
     }
 
     return dmi_en;
@@ -383,10 +386,6 @@ int sc_main(int argc, char **argv)
     bool dmi_en;
     dmi_en = parseDmiArgs(argc, argv);
 
-#if AWS_FPGA_PRESENT
-    if (aws_fpga_en)
-        dmi_en = false; // disable DMI mode for FPGA
-#endif
 
     if (dmi_en)
     {
@@ -401,9 +400,18 @@ int sc_main(int argc, char **argv)
      */
     SimpleCPU *cpu = new SimpleCPU("CPU");
 
-    if (dmi_en)
+    if (dmi_en){
+#if AWS_FPGA_PRESENT
+        if (aws_fpga_en){
+            cpu->set_dmi_mutex(&dmi_mtx, aws_fpga_en);//set the dmi en and mutex for simpleCPU with fpga
+            cpu->set_pci_bar_handle(aws_fpga_handle.pci_bar_handle_pcis); //Pass the AWS FPGA pci_bar_handle_pcis to Simple CPU; then it can access the memory directly.
+        } else {
+            cpu->set_dmi_mutex(&dmi_mtx, aws_fpga_en);// set the mutex for cmod
+        }
+#else
         cpu->set_dmi_mutex(&dmi_mtx);
-
+#endif
+    }
     /*
      * Memories.
      */
@@ -411,9 +419,12 @@ int sc_main(int argc, char **argv)
     void *ram;
     if (aws_fpga_en) {
         ram = new extmem_fpga_sc_wrapper("ram", aws_fpga_handle.pci_bar_handle_pcis);
+        if(dmi_en) {
+            cpu->set_dmi_base_addr(((extmem_fpga_sc_wrapper *)ram)->target_port.base_addr); //Set the DMI base_addr
+        }
     } else {
         ram = new Memory<32>("ram");
-	if (dmi_en)
+        if (dmi_en)
             cpu->set_dmi_base_addr(((Memory<32> *)ram)->target_port.base_addr);
     }
 #else

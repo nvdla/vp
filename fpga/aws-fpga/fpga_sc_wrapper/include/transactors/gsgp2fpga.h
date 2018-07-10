@@ -31,6 +31,7 @@ class Gsgp2fpga
         
     gs::gp::GenericSlavePort<32> gsgp_slave_port;
     void b_transact(gs::gp::GenericSlaveAccessHandle ah);
+    void set_addr_offset(uint64_t addr);
     
 private:
     void end_of_elaboration();
@@ -39,6 +40,7 @@ private:
 
     bool data_write(uint64_t addr, uint8_t *p_data, int len);
     bool data_read(uint64_t addr, uint8_t *p_data, int len);
+
 };
 
 #endif

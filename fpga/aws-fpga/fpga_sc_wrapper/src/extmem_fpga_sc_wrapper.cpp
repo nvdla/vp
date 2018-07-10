@@ -23,6 +23,7 @@ extmem_fpga_sc_wrapper::extmem_fpga_sc_wrapper(sc_module_name name, pci_bar_hand
     
     // Bind CSB port
     this->target_port.bind( m_gsgp2fpga->gsgp_slave_port );
+    m_gsgp2fpga->set_addr_offset(this->target_port.base_addr);
 }
 
 /**
