@@ -1,13 +1,13 @@
 [submodule "libs/tlm2c"]
 	path = libs/tlm2c
-	url = https://git.greensocs.com/tlm/tlm2c.git
+	url = ../tlm2c.git
 [submodule "models/cpu"]
 	path = models/cpu
 	url = ../simple_cpu.git
 	branch = nvdla_vp
 [submodule "models/memory"]
 	path = models/memory
-	url = https://git.greensocs.com/models/simple_memory.git
+	url = ../simple_memory.git
 [submodule "libs/greenlib"]
 	path = libs/greenlib
 	url = ../greenlib.git
