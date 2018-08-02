@@ -4,4 +4,4 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 Build_Runtests:
   script:
-    - ./scripts/build.sh
+    - ./scripts/build_ci.sh
