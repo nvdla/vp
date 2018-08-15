@@ -38,50 +38,57 @@ void Gsgp2fpga::end_of_elaboration()
 {
 }
 
+/* write data to FPGA RAM */
 bool Gsgp2fpga::data_write(uint64_t addr, uint8_t *p_data, int len)
 {
     bool ret  = true;
     int index = 0;
     bool poke_ret = false;
-    bool peek_ret = false;
 
+    if (len >= 4 && (len%4 != 0 || ((addr&0x3) != 0)))
+        SC_REPORT_ERROR(name(), "ERROR: data_write only support 4 byte alignment read, when len is more than 4!\n");
+
+    //Process the 4 byte alignment data.
     while (len >= 4)
     {
-        poke_ret = fpga_pci_poke(pci_bar_handle, addr, *(reinterpret_cast<uint32_t *>(&(p_data[index]))));
+        poke_ret = fpga_pci_poke(pci_bar_handle, (addr+index), *(reinterpret_cast<uint32_t *>(&(p_data[index]))));
         ret   = ret & poke_ret;
         len   = len - 4;
         index = index + 4;
     }
 
-    if (len > 0)
+    //Process the 1 byte data, need aws-fpga sdk v1.4 to support 8 bit read and write.
+    if (len == 1)
     {
-        uint32_t temp_mem = 0;
-        peek_ret = fpga_pci_peek(pci_bar_handle, addr, &temp_mem);
-        ret   = ret & peek_ret;
-
-        memcpy(reinterpret_cast<uint8_t *>(&temp_mem), reinterpret_cast<uint8_t *>(&(p_data[index])), len);
-        poke_ret = fpga_pci_poke(pci_bar_handle, addr, temp_mem);
+        poke_ret = fpga_pci_poke8(pci_bar_handle, (addr+index), *(reinterpret_cast<uint8_t *>(&(p_data[index]))));
         ret   = ret & poke_ret;
     }
 
     return ret;
 }
 
+/* read data from FPGA RAM */
 bool Gsgp2fpga::data_read(uint64_t addr, uint8_t *p_data, int len)
 {
     bool ret  = true;
     int index = 0;
     bool peek_ret = false;
 
-    while (len > 0)
+    if (len >= 4 && (len%4 != 0 || ((addr&0x3) != 0)))
+        SC_REPORT_ERROR(name(), "ERROR: data_read only support 4 byte alignment read, when len is more than 4!\n");
+    
+    while (len >= 4)
     {
-        uint32_t temp_mem = 0;
-        peek_ret = fpga_pci_peek(pci_bar_handle, addr, reinterpret_cast<uint32_t *>(&temp_mem));
-
-        memcpy(reinterpret_cast<uint8_t *>(&(p_data[index])), reinterpret_cast<uint8_t *>(&temp_mem), len);
+        peek_ret = fpga_pci_peek(pci_bar_handle, (addr+index)&0xfffffffc, reinterpret_cast<uint32_t *>(&(p_data[index])));
         ret   = ret & peek_ret;
         len   = len - 4;
         index = index + 4;
+    }
+
+    if (len == 1)
+    {
+        peek_ret = fpga_pci_peek8(pci_bar_handle, (addr+index), reinterpret_cast<uint8_t *>(&(p_data[index])));
+        ret   = ret & peek_ret;
     }
 
     return ret;

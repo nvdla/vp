@@ -87,4 +87,5 @@ $ ./build/bin/aarch64_toplevel --conf [platform.lua]
 
 ## HW verion index
 
-Commit info in github: e18de041df1717b7f9b1a64e0812e1f498c00f2a
+Commit info in github: 7cf6ad5a6e75f01aac1b0041288612e63a5999ac
+

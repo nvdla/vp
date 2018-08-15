@@ -1,6 +1,7 @@
 [submodule "libs/tlm2c"]
 	path = libs/tlm2c
 	url = ../tlm2c.git
+	branch = nvdla_vp
 [submodule "models/cpu"]
 	path = models/cpu
 	url = ../simple_cpu.git
@@ -8,6 +9,7 @@
 [submodule "models/memory"]
 	path = models/memory
 	url = ../simple_memory.git
+	branch = nvdla_vp
 [submodule "libs/greenlib"]
 	path = libs/greenlib
 	url = ../greenlib.git
