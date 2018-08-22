@@ -166,7 +166,7 @@ ExternalProject_Add(qbox
 	BINARY_DIR ${CMAKE_SOURCE_DIR}/libs/qbox.build
 	TMP_DIR ${CMAKE_SOURCE_DIR}/libs/qbox.build/tmp
 	STAMP_DIR ${CMAKE_SOURCE_DIR}/libs/qbox.build/stampdir
-	CONFIGURE_COMMAND ${CMAKE_SOURCE_DIR}/libs/qbox/configure --target-list=aarch64-softmmu --disable-xfsctl ${QBOX_DEBUG_BUILD} --library --qbox --nvdla --with-tlm2c=${CMAKE_SOURCE_DIR}/libs/tlm2c.build --prefix=${CMAKE_SOURCE_DIR}/libs/qbox.build --disable-pie --disable-werror --extra-cflags=-fPIC\ -fpic\ -ftls-model=initial-exec\ -DNVDLA_HW_VERSION=${NVDLA_HW_VERSION}\ ${AWS_FPGA_CFLAGS}
+	CONFIGURE_COMMAND ${CMAKE_SOURCE_DIR}/libs/qbox/configure --target-list=aarch64-softmmu --disable-xfsctl ${QBOX_DEBUG_BUILD} --library --qbox --nvdla --with-tlm2c=${CMAKE_SOURCE_DIR}/libs/tlm2c.build --prefix=${CMAKE_SOURCE_DIR}/libs/qbox.build --disable-pie --disable-werror --extra-cflags=-fPIC\ -fpic\ -ftls-model=initial-exec\ -DNVDLA_HW_VERSION=${NVDLA_HW_VERSION}\ -DNVDLA_HW_PROJECT=${NVDLA_HW_PROJECT}\ ${AWS_FPGA_CFLAGS}
 	PREFIX ${CMAKE_SOURCE_DIR}/libs/qbox.build
 	BUILD_COMMAND $(MAKE)
 )	
